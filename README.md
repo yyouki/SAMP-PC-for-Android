@@ -4,7 +4,7 @@
 
 This is not an Android-native reimplementation of SA-MP, a mobile multiplayer client, or a game-streaming app.
 
-> **Project status: planning / proof-of-concept preparation.** No Android runtime integration or successful on-device SA-MP session is claimed yet.
+> **Project status:** Android launcher shell scaffolded. Windows runtime integration and successful on-device SA-MP PC execution are **not yet implemented or verified**.
 
 ## Project goals
 
@@ -14,6 +14,16 @@ This is not an Android-native reimplementation of SA-MP, a mobile multiplayer cl
 - Detect device capabilities and select only tested CPU, graphics, and input configurations.
 - Measure performance on real devices, beginning with the Redmi 14C (Helio G81-Ultra / Mali-G52 MC2).
 - Preserve compatibility and stability; never trade a working SA-MP session for an unverified FPS tweak.
+
+## Current implementation
+
+- Android project scaffold using Kotlin and Jetpack Compose.
+- Initial home screen with an explicitly disabled Play action while runtime integration is absent.
+- Basic device report: model, SoC identifier, hardware, RAM, CPU thread count, Android API level, and supported ABIs.
+- Runtime contract separated from the UI; no Wine or CPU translator is wired in yet.
+- Gradle Wrapper configuration, pinned build dependencies, build instructions, and an Android CI workflow.
+
+The current app is a **launcher shell**, not a working SA-MP runner. GPU/driver probing is not implemented yet.
 
 ## Non-goals
 
@@ -35,13 +45,23 @@ Candidate components (not yet locked):
 - Graphics: choose a backend using real GPU/driver capability checks. Turnip is an Adreno driver and is not a Mali solution. WineD3D/VirGL and Vulkan-based options must be measured on the target GPU rather than assumed to work.
 - Input: configurable touchscreen overlay, keyboard, and gamepad mapping.
 
-See [Architecture](docs/ARCHITECTURE.md), [Roadmap](docs/ROADMAP.md), [Compatibility testing](docs/COMPATIBILITY.md), and [Architecture decisions](docs/DECISIONS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Roadmap](docs/ROADMAP.md), [Compatibility testing](docs/COMPATIBILITY.md), [Architecture decisions](docs/DECISIONS.md), and [Build instructions](docs/BUILDING.md).
 
 ## SA-MP game-file requirements
 
-The official SA-MP download page states that SA-MP requires the PC DVD release of GTA: San Andreas v1.00 US/EU and that Steam and Direct2Drive editions are not supported by its client. Check the current official requirements before testing: <https://www.sa-mp.com/download.php>.
+The official SA-MP download page states that SA-MP requires the PC DVD release of GTA: San Andreas v1.00 US/EU and that Steam and Direct2Drive editions are not supported by its client. Check the current official requirements before testing: https://www.sa-mp.com/download.php.
 
 Users must provide their own legally obtained game files and client installer. The launcher must not download, bundle, or redistribute copyrighted game assets.
+
+## Build
+
+Install JDK 17 and Android SDK Platform API 37.1 / Build Tools 36.0.0, then run:
+
+```bash
+./gradlew :app:assembleDebug
+```
+
+See [docs/BUILDING.md](docs/BUILDING.md) for exact versions and CI details.
 
 ## Development principles
 
@@ -52,15 +72,11 @@ Users must provide their own legally obtained game files and client installer. T
 5. **Pin and audit dependencies.** Record upstream URL, exact revision, license, build options, and checksums for runtime components.
 6. **Be honest about support.** A configuration is supported only after it passes the documented test matrix.
 
-## Current milestone
+## Milestones
 
-**Milestone 0 — Runtime feasibility.** Validate the entire chain on one Android ARM64/Mali device:
-
-1. Android app can stage and validate user-supplied game files.
-2. The chosen runtime starts a known 32-bit Windows test executable.
-3. Wine can create and display a basic Windows process.
-4. GTA: San Andreas PC starts and renders correctly.
-5. The original SA-MP PC client starts the game and connects to a test server.
+- **Android shell:** scaffolded; build/CI verification pending.
+- **Milestone 0 — Runtime feasibility:** not yet passed. We must validate a 32-bit Windows test program, Wine GUI, GTA: San Andreas PC, the original SA-MP client, and server connection on an Android ARM64/Mali device.
+- **Runtime integration:** blocked until a compatible x86 execution path is proven.
 
 Do not mark a later step complete merely because an earlier step passes.
 
