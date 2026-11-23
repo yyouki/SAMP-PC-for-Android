@@ -1,0 +1,31 @@
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+.externalNativeBuild/
+.cxx/
+*.iml
+.idea/
+.DS_Store
+
+# Native build outputs
+cmake-build-*/
+out/
+obj/
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# Local runtime/game data (never commit copyrighted game files)
+runtime-cache/
+game-data/
+wine-prefixes/
+*.wcp
+*.apk
+*.aab
+
+# Logs and benchmark output generated locally
+*.log
+benchmark-results/
