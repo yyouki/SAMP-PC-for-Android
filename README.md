@@ -20,8 +20,9 @@ This is not an Android-native reimplementation of SA-MP, a mobile multiplayer cl
 - Android project scaffold using Kotlin and Jetpack Compose.
 - Device Performance Dashboard built with Jetpack Compose.
 - Device identity report: manufacturer, model, SoC identifier, hardware, Android version, CPU thread count, and supported ABIs.
-- Foreground-only telemetry sampling for total/available RAM, app PSS, battery capacity, thermal status, power-save state, and low-memory warning.
-- Pure unit tests for memory calculations, thermal-state mapping, and metric formatting.
+- Foreground-only telemetry sampling for total/available RAM, app PSS, battery capacity/state/source, thermal status, power-save state, and low-memory warning.
+- Per-process CPU consumption displayed as core-equivalents using monotonic CPU-time sampling; this is not system-wide CPU utilization.
+- Pure unit tests for memory calculations, app CPU interval calculations, thermal/battery state mapping, and metric formatting.
 - The dashboard explicitly avoids guessing GPU drivers or system-wide CPU utilization.
 - The runtime contract remains separate from the UI; no game runtime is integrated by this dashboard.
 - Gradle Wrapper configuration, pinned build dependencies, build instructions, and an Android CI workflow.
@@ -58,7 +59,7 @@ Users must provide their own legally obtained game files and client installer. T
 
 ## Build
 
-Install JDK 17 and Android SDK Platform API 37.1 / Build Tools 36.0.0, then run:
+Install JDK 17 and Android SDK Platform API 36 / Build Tools 36.0.0, then run:
 
 ```bash
 ./gradlew :app:assembleDebug
@@ -77,7 +78,7 @@ See [docs/BUILDING.md](docs/BUILDING.md) for exact versions and CI details.
 
 ## Milestones
 
-- **Android shell:** scaffolded; build/CI verification pending.
+- **Android dashboard shell:** scaffolded; CI build/test verification pending.
 - **Milestone 0 — Runtime feasibility:** not yet passed. We must validate a 32-bit Windows test program, Wine GUI, GTA: San Andreas PC, the original SA-MP client, and server connection on an Android ARM64/Mali device.
 - **Runtime integration:** blocked until a compatible x86 execution path is proven.
 
