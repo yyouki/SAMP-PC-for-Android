@@ -59,7 +59,7 @@ Users must provide their own legally obtained game files and client installer. T
 
 ## Build
 
-Install JDK 17 and Android SDK Platform API 37 preview (Canary) / Build Tools 36.0.0, then run:
+Install JDK 17 and Android SDK Platform API 37.1 (CANARY) (Canary) / Build Tools 36.0.0, then run:
 
 ```bash
 ./gradlew :app:assembleDebug
