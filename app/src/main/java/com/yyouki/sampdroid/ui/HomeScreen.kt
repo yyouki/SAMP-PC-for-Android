@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +53,10 @@ import java.util.Date
 private const val SAMPLE_INTERVAL_MS = 5_000L
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -125,6 +129,8 @@ fun HomeScreen() {
             Header(
                 isForeground = isForeground,
                 sampledAt = snapshot.sampledAtEpochMs,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
             )
 
             DeviceCard(report = device)
@@ -187,6 +193,8 @@ fun HomeScreen() {
 private fun Header(
     isForeground: Boolean,
     sampledAt: Long,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -218,6 +226,15 @@ private fun Header(
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
             )
+            TextButton(
+                onClick = onToggleTheme,
+            ) {
+                Text(
+                    text = if (isDarkTheme) "LIGHT MODE" else "DARK MODE",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Text(
                 text = DateFormat.getTimeInstance(DateFormat.SHORT)
                     .format(Date(sampledAt)),
