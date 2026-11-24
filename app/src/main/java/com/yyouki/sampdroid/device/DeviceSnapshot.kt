@@ -76,6 +76,26 @@ data class DeviceSnapshot(
         get() = calculateUsagePercent(totalMemoryMb, availableMemoryMb)
 }
 
+/** Monotonic process CPU and wall-clock timestamps for interval-based sampling. */
+data class CpuTimeSample(
+    val processCpuTimeMs: Long,
+    val elapsedRealtimeMs: Long,
+)
+
+/**
+ * Estimate CPU cores consumed by this app process over a sampling interval.
+ * Values are core-equivalents (1.0 means one full logical core), not system-wide CPU percent.
+ */
+fun calculateAppCpuCores(previous: CpuTimeSample?, current: CpuTimeSample): Double? {
+    if (previous == null) return null
+
+    val cpuDelta = current.processCpuTimeMs - previous.processCpuTimeMs
+    val wallDelta = current.elapsedRealtimeMs - previous.elapsedRealtimeMs
+    if (cpuDelta < 0L || wallDelta <= 0L) return null
+
+    return cpuDelta.toDouble() / wallDelta.toDouble()
+}
+
 /** Pure helper so memory calculations can be tested without an Android device. */
 fun calculateUsagePercent(totalMb: Long?, availableMb: Long?): Int? {
     if (totalMb == null || availableMb == null || totalMb <= 0L) return null
