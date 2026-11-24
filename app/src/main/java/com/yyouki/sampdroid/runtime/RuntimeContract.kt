@@ -1,46 +1,24 @@
 package com.yyouki.sampdroid.runtime
 
 /**
- * Runtime integration boundary. UI code must not construct Wine or shell commands.
- * Implementations are added only after a Windows x86 execution path passes the PoC.
+ * Read-only integration status for the Android dashboard.
+ *
+ * This module deliberately exposes status only. It does not install, load,
+ * execute, or control external programs.
  */
-enum class RuntimeReadiness {
+enum class RuntimeIntegrationState {
     NOT_INTEGRATED,
-    NOT_INSTALLED,
-    READY,
-    BROKEN,
 }
 
 data class RuntimeStatus(
-    val readiness: RuntimeReadiness,
-    val message: String,
-    val runtimeVersion: String? = null,
+    val state: RuntimeIntegrationState,
+    val title: String,
+    val description: String,
 )
 
-data class GameProfile(
-    val id: String,
-    val displayName: String,
-    val gameDirectoryUri: String?,
-    val nickname: String,
+/** Returns the truthful status of the current app build. */
+fun currentRuntimeStatus(): RuntimeStatus = RuntimeStatus(
+    state = RuntimeIntegrationState.NOT_INTEGRATED,
+    title = "Not integrated",
+    description = "This build contains no external runtime components.",
 )
-
-data class GameLaunchRequest(
-    val profile: GameProfile,
-    val serverAddress: String?,
-)
-
-sealed interface GameLaunchResult {
-    data object RuntimeNotIntegrated : GameLaunchResult
-    data class Started(val processId: Int?) : GameLaunchResult
-    data class Failed(val code: String, val message: String) : GameLaunchResult
-}
-
-/**
- * Potentially blocking runtime calls are suspend functions.
- * Invoke them from an application coroutine scope, never directly from a composable.
- */
-interface PcGameRuntime {
-    suspend fun inspect(): RuntimeStatus
-    suspend fun launch(request: GameLaunchRequest): GameLaunchResult
-    suspend fun stop(): Boolean
-}
