@@ -1,5 +1,6 @@
 package com.yyouki.sampdroid.ui
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yyouki.sampdroid.device.DeviceProbe
+import com.yyouki.sampdroid.device.formatDiagnosticReport
 import com.yyouki.sampdroid.device.calculateAppCpuCores
 import com.yyouki.sampdroid.device.DeviceReport
 import com.yyouki.sampdroid.device.DeviceSnapshot
@@ -149,6 +151,34 @@ fun HomeScreen() {
             ) {
                 Text("REFRESH NOW", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
+
+            OutlinedButton(
+                onClick = {
+                    val reportText = formatDiagnosticReport(device, snapshot, appCpuCores)
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "Android device diagnostic report")
+                        putExtra(Intent.EXTRA_TEXT, reportText)
+                    }
+                    // The user selects the destination in Android's Sharesheet.
+                    context.startActivity(
+                        Intent.createChooser(sendIntent, "Share diagnostic report"),
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text("SHARE DIAGNOSTIC REPORT", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Text(
+                text = "The report contains device details and current measurements. Review it before sharing.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
