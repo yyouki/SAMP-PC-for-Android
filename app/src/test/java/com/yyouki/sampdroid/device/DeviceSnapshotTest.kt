@@ -35,6 +35,15 @@ class DeviceSnapshotTest {
     }
 
     @Test
+    fun mapsBatteryStatuses() {
+        assertEquals(BatteryState.CHARGING, BatteryState.fromPlatformStatus(2))
+        assertEquals(BatteryState.DISCHARGING, BatteryState.fromPlatformStatus(3))
+        assertEquals(BatteryState.NOT_CHARGING, BatteryState.fromPlatformStatus(4))
+        assertEquals(BatteryState.FULL, BatteryState.fromPlatformStatus(5))
+        assertEquals(BatteryState.UNKNOWN, BatteryState.fromPlatformStatus(-1))
+    }
+
+    @Test
     fun formatsMemoryUsingStableUnitAndLocale() {
         assertEquals("1.0 GB", formatMemoryMb(1_024))
         assertEquals("Unavailable", formatMemoryMb(null))
