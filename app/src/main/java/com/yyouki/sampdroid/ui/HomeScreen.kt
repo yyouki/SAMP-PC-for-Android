@@ -172,7 +172,7 @@ fun HomeScreen(
 
             OutlinedButton(
                 onClick = {
-                    val reportText = formatDiagnosticReport(device, snapshot, appCpuCores)
+                    val reportText = formatDiagnosticReport(device, snapshot, appCpuCores, appStorage)
                     val sendIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_SUBJECT, "Android device diagnostic report")
