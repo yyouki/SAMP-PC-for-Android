@@ -8,11 +8,12 @@
 
 - Device Performance Dashboard with device identity, SoC identifier, hardware, Android version, CPU thread count, and supported ABIs.
 - Foreground-only telemetry for total/available RAM, app PSS, battery capacity/state/source, thermal status, power-save state, and low-memory warning.
+- App data filesystem capacity and available space, with a clear note that filesystem capacity is not an app-specific quota.
 - Per-process CPU consumption displayed as core-equivalents using monotonic CPU-time sampling; this is not system-wide CPU utilization.
 - User-selectable light and dark themes, with the selection persisted across app restarts.
 - Explicit user-initiated sharing of a plain-text diagnostic report through Android Sharesheet. The report includes device details and sampled telemetry; review it before choosing a destination.
 - Read-only runtime integration status card. The current state is **Not integrated**; no external program is loaded or started.
-- Unit tests for memory calculations, app CPU interval calculations, thermal/battery state mapping, formatting, missing-value handling, and runtime status.
+- Unit tests for memory/storage calculations, app CPU interval calculations, thermal/battery state mapping, formatting, missing-value handling, diagnostic report fields, and runtime status.
 - The dashboard does not guess GPU drivers or system-wide CPU utilization.
 - Gradle Wrapper configuration, pinned build dependencies, build instructions, and Android CI with debug APK artifact upload.
 
