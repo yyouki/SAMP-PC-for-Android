@@ -39,7 +39,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yyouki.sampdroid.device.DeviceProbe
-import com.yyouki.sampdroid.runtime.RuntimeIntegrationState
 import com.yyouki.sampdroid.runtime.currentRuntimeStatus
 import com.yyouki.sampdroid.device.formatDiagnosticReport
 import com.yyouki.sampdroid.device.calculateAppCpuCores
