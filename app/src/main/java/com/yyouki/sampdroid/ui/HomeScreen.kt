@@ -39,6 +39,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yyouki.sampdroid.device.DeviceProbe
+import com.yyouki.sampdroid.device.AppStorageProbe
+import com.yyouki.sampdroid.device.StorageSnapshot
+import com.yyouki.sampdroid.device.formatStorageBytes
 import com.yyouki.sampdroid.runtime.currentRuntimeStatus
 import com.yyouki.sampdroid.device.formatDiagnosticReport
 import com.yyouki.sampdroid.device.calculateAppCpuCores
@@ -66,6 +69,9 @@ fun HomeScreen(
     }
     var snapshot by remember(context) {
         mutableStateOf(DeviceProbe.readSnapshot(context))
+    }
+    var appStorage by remember(context) {
+        mutableStateOf(AppStorageProbe.readSnapshot(context))
     }
     var appCpuCores by remember(context) { mutableStateOf<Double?>(null) }
     var previousCpuSample by remember(context) {
@@ -140,6 +146,8 @@ fun HomeScreen(
 
             MemoryCard(snapshot = snapshot)
 
+            StorageCard(snapshot = appStorage)
+
             SystemHealthCard(
                 snapshot = snapshot,
                 appCpuCores = appCpuCores,
@@ -151,6 +159,7 @@ fun HomeScreen(
                 onClick = {
                     device = DeviceProbe.readDeviceReport(context)
                     snapshot = DeviceProbe.readSnapshot(context)
+                    appStorage = AppStorageProbe.readSnapshot(context)
                     previousCpuSample = DeviceProbe.readCpuTimeSample()
                     appCpuCores = null
                 },
@@ -350,6 +359,57 @@ private fun MemoryCard(snapshot: DeviceSnapshot) {
         MetricRow("Total RAM", formatMemoryMb(snapshot.totalMemoryMb))
         MetricRow("Available RAM", formatMemoryMb(snapshot.availableMemoryMb))
         MetricRow("App memory (PSS)", formatMemoryMb(snapshot.appPssMb))
+    }
+}
+
+@Composable
+private fun StorageCard(snapshot: StorageSnapshot?) {
+    val usedPercent = snapshot?.usedPercent
+
+    Panel(title = "APP DATA STORAGE") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column {
+                Text(
+                    text = formatStorageBytes(snapshot?.usedBytes),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 23.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Used on the app data filesystem",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                )
+            }
+            Text(
+                text = usedPercent?.let { "$it%" } ?: "N/A",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        LinearProgressIndicator(
+            progress = { (usedPercent ?: 0) / 100f },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+
+        MetricRow("Filesystem total", formatStorageBytes(snapshot?.totalBytes))
+        MetricRow("Available space", formatStorageBytes(snapshot?.availableBytes))
+        Text(
+            text = "These figures describe the filesystem containing this app's private data, not a per-app storage quota.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+            lineHeight = 16.sp,
+        )
     }
 }
 
