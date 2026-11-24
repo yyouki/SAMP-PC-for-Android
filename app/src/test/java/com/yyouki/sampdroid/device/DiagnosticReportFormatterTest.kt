@@ -31,7 +31,16 @@ class DiagnosticReportFormatterTest {
             sampledAtEpochMs = 1_000L,
         )
 
-        val report = formatDiagnosticReport(device, snapshot, appCpuCores = 0.5)
+        val storage = StorageSnapshot(
+            totalBytes = 1_073_741_824L,
+            availableBytes = 268_435_456L,
+        )
+        val report = formatDiagnosticReport(
+            device = device,
+            snapshot = snapshot,
+            appCpuCores = 0.5,
+            storage = storage,
+        )
 
         assertTrue(report.contains("Name: Example Model X"))
         assertTrue(report.contains("SoC: SoC Y"))
@@ -42,6 +51,9 @@ class DiagnosticReportFormatterTest {
         assertTrue(report.contains("Thermal status: Moderate"))
         assertTrue(report.contains("Power saver: Off"))
         assertTrue(report.contains("Low-memory warning: No"))
+        assertTrue(report.contains("Filesystem total: 1.00 GB"))
+        assertTrue(report.contains("Available space: 0.25 GB"))
+        assertTrue(report.contains("Used space: 75%"))
     }
 
     @Test
@@ -76,6 +88,7 @@ class DiagnosticReportFormatterTest {
         assertTrue(report.contains("Total RAM: Unavailable"))
         assertTrue(report.contains("Battery: Unavailable"))
         assertTrue(report.contains("App CPU: Unavailable"))
+        assertTrue(report.contains("Filesystem total: Unavailable"))
         assertFalse(report.contains("NaN cores"))
     }
 }
