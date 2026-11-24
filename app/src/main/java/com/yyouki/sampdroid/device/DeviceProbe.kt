@@ -64,7 +64,7 @@ object DeviceProbe {
             IntentFilter(Intent.ACTION_BATTERY_CHANGED),
         )
         val batteryStatus = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        val pluggedSource = batteryIntent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+        val pluggedSource = batteryIntent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
 
         val powerManager = context.getSystemService(PowerManager::class.java)
         val thermalState = if (
@@ -85,7 +85,9 @@ object DeviceProbe {
                 BatteryManager.BATTERY_PLUGGED_AC -> "AC"
                 BatteryManager.BATTERY_PLUGGED_USB -> "USB"
                 BatteryManager.BATTERY_PLUGGED_WIRELESS -> "Wireless"
-                else -> if (batteryStatus == BatteryManager.BATTERY_STATUS_DISCHARGING) "Battery" else "Unknown"
+                8 -> "Dock"
+                0 -> "Battery"
+                else -> "Unknown"
             },
             thermalState = thermalState,
             powerSaveMode = powerManager?.isPowerSaveMode,
