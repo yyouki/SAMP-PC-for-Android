@@ -11,11 +11,10 @@
 - Per-process CPU consumption displayed as core-equivalents using monotonic CPU-time sampling; this is not system-wide CPU utilization.
 - User-selectable light and dark themes, with the selection persisted across app restarts.
 - Explicit user-initiated sharing of a plain-text diagnostic report through Android Sharesheet. The report includes device details and sampled telemetry; review it before choosing a destination.
-- Unit tests for memory calculations, app CPU interval calculations, thermal/battery state mapping, formatting, and missing-value handling.
+- Read-only runtime integration status card. The current state is **Not integrated**; no external program is loaded or started.
+- Unit tests for memory calculations, app CPU interval calculations, thermal/battery state mapping, formatting, missing-value handling, and runtime status.
 - The dashboard does not guess GPU drivers or system-wide CPU utilization.
 - Gradle Wrapper configuration, pinned build dependencies, build instructions, and Android CI with debug APK artifact upload.
-
-The current app is a device diagnostics shell. A successful Android build does not establish compatibility with unrelated desktop software. GPU/driver probing is not implemented.
 
 ## Build
 
@@ -41,6 +40,7 @@ The report is created only after the user taps **SHARE DIAGNOSTIC REPORT**. It c
 
 - **Android diagnostics dashboard:** implemented; build and unit tests verified by GitHub Actions.
 - **Theme preference:** light/dark selection persists across launches.
+- **Runtime status:** read-only status model; external runtime not integrated.
 - **Debug APK artifact:** uploaded by CI for each successful run; artifacts expire after seven days.
 - **On-device verification:** not yet performed on a physical Redmi 14C.
 - **GPU/driver telemetry:** not implemented; values are not inferred or fabricated.
