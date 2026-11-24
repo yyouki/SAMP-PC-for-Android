@@ -88,15 +88,20 @@ fun HomeScreen() {
 
     // Keep telemetry sampling lightweight and foreground-only.
     LaunchedEffect(isForeground) {
+        if (!isForeground) return@LaunchedEffect
+
+        // Start a fresh interval after resume; never include time spent in the background.
+        previousCpuSample = DeviceProbe.readCpuTimeSample()
+        appCpuCores = null
+
         while (isForeground && isActive) {
-            // Wait before the first sample so the CPU metric has a meaningful interval.
+            // Wait before sampling so the CPU metric represents a complete interval.
             delay(SAMPLE_INTERVAL_MS)
             if (!isForeground || !isActive) break
 
-            device = DeviceProbe.readDeviceReport(context)
+            // Device identity rarely changes; only dynamic telemetry is sampled periodically.
             snapshot = DeviceProbe.readSnapshot(context)
 
-            // Compare process CPU time against monotonic elapsed time for this interval.
             val currentCpuSample = DeviceProbe.readCpuTimeSample()
             appCpuCores = calculateAppCpuCores(previousCpuSample, currentCpuSample)
             previousCpuSample = currentCpuSample
