@@ -53,6 +53,8 @@ The light/dark theme preference is stored locally in app-private SharedPreferenc
 
 The user can explicitly share a plain-text diagnostic report using Android Sharesheet. The report contains device characteristics and sampled telemetry. Sharing does not happen automatically; the user selects the destination and should review the report first.
 
+The runtime section is a read-only status display. This app build reports **Not integrated** and does not install, load, execute, or control external programs.
+
 ## CI artifacts
 
 A successful GitHub Actions run uploads `app/build/outputs/apk/debug/app-debug.apk` as `sampdroid-lite-debug-<commit-sha>`. Artifacts are retained for seven days and can be downloaded from the workflow run's **Artifacts** section.
