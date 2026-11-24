@@ -8,6 +8,8 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.Debug
 import android.os.PowerManager
+import android.os.Process
+import android.os.SystemClock
 
 /**
  * Reads public Android device information.
@@ -16,6 +18,11 @@ import android.os.PowerManager
  * or claim to provide system-wide CPU utilization.
  */
 object DeviceProbe {
+    fun readCpuTimeSample(): CpuTimeSample = CpuTimeSample(
+        processCpuTimeMs = Process.getElapsedCpuTime(),
+        elapsedRealtimeMs = SystemClock.elapsedRealtime(),
+    )
+
     fun readDeviceReport(context: Context): DeviceReport {
         val socName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Build.SOC_MODEL.takeIf(String::isNotBlank) ?: Build.HARDWARE
