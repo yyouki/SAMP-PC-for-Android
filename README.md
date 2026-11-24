@@ -1,17 +1,17 @@
 # SAMP-PC-for-Android
 
-**SAMPDroid Lite** is an Android launcher/runtime integration project whose intended product direction is documented separately from the currently implemented Android diagnostics shell.
+**SAMPDroid Lite** is an Android diagnostics application built with Kotlin and Jetpack Compose.
 
 > **Current implementation status:** The working Android app is a device diagnostics dashboard. No Windows compatibility runtime or SA-MP PC runtime is included or verified.
 
 ## Current implementation
 
-- Android project scaffold using Kotlin and Jetpack Compose.
 - Device Performance Dashboard with device identity, SoC identifier, hardware, Android version, CPU thread count, and supported ABIs.
 - Foreground-only telemetry for total/available RAM, app PSS, battery capacity/state/source, thermal status, power-save state, and low-memory warning.
 - Per-process CPU consumption displayed as core-equivalents using monotonic CPU-time sampling; this is not system-wide CPU utilization.
+- User-selectable light and dark themes, with the selection persisted across app restarts.
 - Explicit user-initiated sharing of a plain-text diagnostic report through Android Sharesheet. The report includes device details and sampled telemetry; review it before choosing a destination.
-- Pure unit tests for memory calculations, app CPU interval calculations, thermal/battery state mapping, formatting, and missing-value handling.
+- Unit tests for memory calculations, app CPU interval calculations, thermal/battery state mapping, formatting, and missing-value handling.
 - The dashboard does not guess GPU drivers or system-wide CPU utilization.
 - Gradle Wrapper configuration, pinned build dependencies, build instructions, and Android CI with debug APK artifact upload.
 
@@ -40,6 +40,7 @@ The report is created only after the user taps **SHARE DIAGNOSTIC REPORT**. It c
 ## Project status
 
 - **Android diagnostics dashboard:** implemented; build and unit tests verified by GitHub Actions.
+- **Theme preference:** light/dark selection persists across launches.
 - **Debug APK artifact:** uploaded by CI for each successful run; artifacts expire after seven days.
 - **On-device verification:** not yet performed on a physical Redmi 14C.
 - **GPU/driver telemetry:** not implemented; values are not inferred or fabricated.
