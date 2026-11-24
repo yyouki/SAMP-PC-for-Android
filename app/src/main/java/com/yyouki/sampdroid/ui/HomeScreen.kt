@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yyouki.sampdroid.device.BatteryState
 import com.yyouki.sampdroid.device.DeviceProbe
+import com.yyouki.sampdroid.device.calculateAppCpuCores
 import com.yyouki.sampdroid.device.DeviceReport
 import com.yyouki.sampdroid.device.DeviceSnapshot
 import com.yyouki.sampdroid.device.ThermalState
@@ -59,6 +60,10 @@ fun HomeScreen() {
     }
     var snapshot by remember(context) {
         mutableStateOf(DeviceProbe.readSnapshot(context))
+    }
+    var appCpuCores by remember(context) { mutableStateOf<Double?>(null) }
+    var previousCpuSample by remember(context) {
+        mutableStateOf(DeviceProbe.readCpuTimeSample())
     }
     var isForeground by remember(lifecycleOwner) {
         mutableStateOf(
@@ -87,6 +92,12 @@ fun HomeScreen() {
         while (isForeground && isActive) {
             device = DeviceProbe.readDeviceReport(context)
             snapshot = DeviceProbe.readSnapshot(context)
+
+            // Compare process CPU time against monotonic elapsed time for this interval.
+            val currentCpuSample = DeviceProbe.readCpuTimeSample()
+            appCpuCores = calculateAppCpuCores(previousCpuSample, currentCpuSample)
+            previousCpuSample = currentCpuSample
+
             delay(SAMPLE_INTERVAL_MS)
         }
     }
@@ -112,7 +123,10 @@ fun HomeScreen() {
 
             MemoryCard(snapshot = snapshot)
 
-            SystemHealthCard(snapshot = snapshot)
+            SystemHealthCard(
+                snapshot = snapshot,
+                appCpuCores = appCpuCores,
+            )
 
             DiagnosticNote()
 
@@ -120,6 +134,8 @@ fun HomeScreen() {
                 onClick = {
                     device = DeviceProbe.readDeviceReport(context)
                     snapshot = DeviceProbe.readSnapshot(context)
+                    previousCpuSample = DeviceProbe.readCpuTimeSample()
+                    appCpuCores = null
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -247,7 +263,10 @@ private fun MemoryCard(snapshot: DeviceSnapshot) {
 }
 
 @Composable
-private fun SystemHealthCard(snapshot: DeviceSnapshot) {
+private fun SystemHealthCard(
+    snapshot: DeviceSnapshot,
+    appCpuCores: Double?,
+) {
     val thermalColor = when (snapshot.thermalState) {
         ThermalState.NONE, ThermalState.LIGHT -> MaterialTheme.colorScheme.secondary
         ThermalState.MODERATE -> MaterialTheme.colorScheme.tertiary
@@ -262,6 +281,11 @@ private fun SystemHealthCard(snapshot: DeviceSnapshot) {
         )
         MetricRow("Battery state", snapshot.batteryState.displayName)
         MetricRow("Power source", snapshot.batterySource)
+        MetricRow(
+            "App CPU",
+            appCpuCores?.let { String.format(java.util.Locale.US, "%.2f cores", it) }
+                ?: "Sampling...",
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -298,7 +322,7 @@ private fun DiagnosticNote() {
             lineHeight = 18.sp,
         )
         Text(
-            text = "GPU model, driver version, and system-wide CPU utilization are not guessed when Android does not expose reliable public data.",
+            text = "GPU model, driver version, and system-wide CPU utilization are not guessed. App CPU is shown as core-equivalents for this process only.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 18.sp,
