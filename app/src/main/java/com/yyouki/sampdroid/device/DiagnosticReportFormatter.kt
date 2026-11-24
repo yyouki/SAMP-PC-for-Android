@@ -11,6 +11,7 @@ fun formatDiagnosticReport(
     device: DeviceReport,
     snapshot: DeviceSnapshot,
     appCpuCores: Double?,
+    storage: StorageSnapshot? = null,
 ): String {
     val cpuText = appCpuCores
         ?.takeIf { it.isFinite() && it >= 0.0 }
@@ -37,6 +38,13 @@ fun formatDiagnosticReport(
         appendLine("Used RAM: ${formatMemoryMb(snapshot.usedMemoryMb)}")
         appendLine("Used RAM: ${snapshot.usedMemoryPercent?.let { "$it%" } ?: "Unavailable"}")
         appendLine("App PSS: ${formatMemoryMb(snapshot.appPssMb)}")
+        appendLine()
+        appendLine("[STORAGE]")
+        appendLine("Filesystem total: ${formatStorageBytes(storage?.totalBytes)}")
+        appendLine("Available space: ${formatStorageBytes(storage?.availableBytes)}")
+        appendLine("Used space: ${formatStorageBytes(storage?.usedBytes)}")
+        appendLine("Used space: ${storage?.usedPercent?.let { "$it%" } ?: "Unavailable"}")
+        appendLine("Note: Storage figures describe the filesystem containing the app's private data, not an app-specific quota.")
         appendLine()
         appendLine("[SYSTEM]")
         appendLine("App CPU: $cpuText")
