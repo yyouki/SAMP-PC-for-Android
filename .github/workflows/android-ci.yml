@@ -22,10 +22,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Hosted Ubuntu runners already provide ANDROID_HOME and sdkmanager.
+      - name: Set up Android SDK command-line tools
+        uses: android-actions/setup-android@v4
+        with:
+          # Install SDK packages explicitly in the next step.
+          packages: ''
+
       - name: Install Android SDK packages
         run: |
-          yes | sdkmanager --licenses >/dev/null
           sdkmanager --install "platforms;android-37" "build-tools;36.0.0"
 
       - name: Set up Gradle
