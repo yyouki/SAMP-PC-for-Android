@@ -29,6 +29,26 @@ enum class ThermalState(val displayName: String) {
     }
 }
 
+/** Current battery operating state from Android's sticky battery broadcast. */
+enum class BatteryState(val displayName: String) {
+    CHARGING("Charging"),
+    DISCHARGING("Discharging"),
+    FULL("Full"),
+    NOT_CHARGING("Not charging"),
+    UNKNOWN("Unavailable");
+
+    companion object {
+        // Map Android BatteryManager status constants without exposing platform values to UI.
+        fun fromPlatformStatus(status: Int): BatteryState = when (status) {
+            2 -> CHARGING
+            3 -> DISCHARGING
+            4 -> NOT_CHARGING
+            5 -> FULL
+            else -> UNKNOWN
+        }
+    }
+}
+
 /**
  * A point-in-time system and app memory snapshot.
  * Values may be null when the Android service does not expose them.
@@ -38,6 +58,8 @@ data class DeviceSnapshot(
     val availableMemoryMb: Long?,
     val appPssMb: Long?,
     val batteryPercent: Int?,
+    val batteryState: BatteryState,
+    val batterySource: String,
     val thermalState: ThermalState,
     val powerSaveMode: Boolean?,
     val lowMemory: Boolean?,
