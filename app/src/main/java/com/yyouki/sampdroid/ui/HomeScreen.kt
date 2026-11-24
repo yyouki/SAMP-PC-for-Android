@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.yyouki.sampdroid.device.BatteryState
 import com.yyouki.sampdroid.device.DeviceProbe
 import com.yyouki.sampdroid.device.calculateAppCpuCores
 import com.yyouki.sampdroid.device.DeviceReport
@@ -90,6 +89,10 @@ fun HomeScreen() {
     // Keep telemetry sampling lightweight and foreground-only.
     LaunchedEffect(isForeground) {
         while (isForeground && isActive) {
+            // Wait before the first sample so the CPU metric has a meaningful interval.
+            delay(SAMPLE_INTERVAL_MS)
+            if (!isForeground || !isActive) break
+
             device = DeviceProbe.readDeviceReport(context)
             snapshot = DeviceProbe.readSnapshot(context)
 
@@ -97,8 +100,6 @@ fun HomeScreen() {
             val currentCpuSample = DeviceProbe.readCpuTimeSample()
             appCpuCores = calculateAppCpuCores(previousCpuSample, currentCpuSample)
             previousCpuSample = currentCpuSample
-
-            delay(SAMPLE_INTERVAL_MS)
         }
     }
 
