@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.yyouki.sampdroid.device.BatteryState
 import com.yyouki.sampdroid.device.DeviceProbe
 import com.yyouki.sampdroid.device.DeviceReport
 import com.yyouki.sampdroid.device.DeviceSnapshot
@@ -259,6 +260,8 @@ private fun SystemHealthCard(snapshot: DeviceSnapshot) {
             "Battery",
             snapshot.batteryPercent?.let { "$it%" } ?: "Unavailable",
         )
+        MetricRow("Battery state", snapshot.batteryState.displayName)
+        MetricRow("Power source", snapshot.batterySource)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
