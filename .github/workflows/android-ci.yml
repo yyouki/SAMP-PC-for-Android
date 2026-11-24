@@ -33,10 +33,10 @@ jobs:
         with:
           packages: ''
 
-      # Android API 37 is preview; fetch it from the SDK Canary channel.
+      # Android 17 API 37.1 is published as the CANARY platform package.
       - name: Install Android SDK packages
         run: |
-          sdkmanager --channel=3 --install "platforms;android-37" "build-tools;36.0.0"
+          sdkmanager --channel=3 --install "platforms;android-CANARY" "build-tools;36.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
