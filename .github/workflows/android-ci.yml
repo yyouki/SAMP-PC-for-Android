@@ -6,12 +6,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Cancel obsolete builds for the same branch so the latest commit gets CI priority.
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@v4
