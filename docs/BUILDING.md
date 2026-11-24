@@ -49,6 +49,8 @@ app/build/outputs/apk/debug/app-debug.apk
 
 The app displays device identity, total/available memory, app PSS, battery capacity/state/source, Android thermal status, power-save state, and low-memory warnings. It estimates CPU core-equivalents for this app process from Process CPU time; this is not system-wide CPU utilization. Sampling pauses when the activity is not visible. Android does not expose a universal, reliable per-device GPU/driver string through a single public API; that field is not guessed.
 
+The light/dark theme preference is stored locally in app-private SharedPreferences. It is read at startup and updated only when the user changes the theme.
+
 The user can explicitly share a plain-text diagnostic report using Android Sharesheet. The report contains device characteristics and sampled telemetry. Sharing does not happen automatically; the user selects the destination and should review the report first.
 
 ## CI artifacts
