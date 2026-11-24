@@ -28,10 +28,15 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
+      - name: Set up Android SDK tools
         uses: android-actions/setup-android@v4
         with:
-          packages: "platforms;android-36 build-tools;36.0.0"
+          packages: ''
+
+      # Android API 37 is preview; fetch it from the SDK Canary channel.
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --channel=3 --install "platforms;android-37" "build-tools;36.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
