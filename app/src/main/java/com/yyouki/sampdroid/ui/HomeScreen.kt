@@ -16,11 +16,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,15 +36,61 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yyouki.sampdroid.device.DeviceProbe
 import com.yyouki.sampdroid.device.DeviceReport
-import java.util.Locale
+import com.yyouki.sampdroid.device.DeviceSnapshot
+import com.yyouki.sampdroid.device.ThermalState
+import com.yyouki.sampdroid.device.formatMemoryMb
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import java.text.DateFormat
+import java.util.Date
+
+private const val SAMPLE_INTERVAL_MS = 5_000L
 
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     var device by remember(context) {
-        mutableStateOf(DeviceProbe.read(context))
+        mutableStateOf(DeviceProbe.readDeviceReport(context))
+    }
+    var snapshot by remember(context) {
+        mutableStateOf(DeviceProbe.readSnapshot(context))
+    }
+    var isForeground by remember(lifecycleOwner) {
+        mutableStateOf(
+            lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED),
+        )
+    }
+
+    // Observe the screen lifecycle so periodic sampling stops in the background.
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> isForeground = true
+                Lifecycle.Event.ON_STOP -> isForeground = false
+                else -> Unit
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Keep telemetry sampling lightweight and foreground-only.
+    LaunchedEffect(isForeground) {
+        while (isForeground && isActive) {
+            device = DeviceProbe.readDeviceReport(context)
+            snapshot = DeviceProbe.readSnapshot(context)
+            delay(SAMPLE_INTERVAL_MS)
+        }
     }
 
     Column(
@@ -54,182 +103,254 @@ fun HomeScreen() {
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Header()
-            RuntimeCard()
-            DeviceCard(
-                report = device,
-                onRefresh = { device = DeviceProbe.read(context) },
+            Header(
+                isForeground = isForeground,
+                sampledAt = snapshot.sampledAtEpochMs,
             )
-            ProjectNote()
+
+            DeviceCard(report = device)
+
+            MemoryCard(snapshot = snapshot)
+
+            SystemHealthCard(snapshot = snapshot)
+
+            DiagnosticNote()
+
+            OutlinedButton(
+                onClick = {
+                    device = DeviceProbe.readDeviceReport(context)
+                    snapshot = DeviceProbe.readSnapshot(context)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text("REFRESH NOW", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
 
 @Composable
-private fun Header() {
+private fun Header(
+    isForeground: Boolean,
+    sampledAt: Long,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "SAMPDROID",
+                text = "DEVICE LAB",
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 25.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
             )
             Text(
-                text = "PC EDITION  ·  ANDROID",
+                text = "SYSTEM PERFORMANCE",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 letterSpacing = 1.5.sp,
             )
         }
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(50),
-        ) {
+        Column(horizontalAlignment = Alignment.End) {
+            StatusChip(
+                label = if (isForeground) "LIVE" else "PAUSED",
+                color = if (isForeground) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
             Text(
-                text = "DEV 0.1.0",
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                color = MaterialTheme.colorScheme.secondary,
+                text = DateFormat.getTimeInstance(DateFormat.SHORT)
+                    .format(Date(sampledAt)),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 5.dp),
             )
         }
     }
 }
 
 @Composable
-private fun RuntimeCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        shape = RoundedCornerShape(24.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+private fun DeviceCard(report: DeviceReport) {
+    Panel(title = "DEVICE INFORMATION") {
+        Text(
+            text = report.displayName.ifBlank { "Unknown device" },
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        MetricRow("Manufacturer", report.manufacturer.ifBlank { "Unavailable" })
+        MetricRow("SoC", report.socModel.ifBlank { "Unavailable" })
+        MetricRow("Hardware", report.hardware.ifBlank { "Unavailable" })
+        MetricRow("CPU threads", report.cpuThreadCount.toString())
+        MetricRow(
+            "Android",
+            "${report.androidRelease} · API ${report.apiLevel}",
+        )
+        MetricRow(
+            "Supported ABIs",
+            report.supportedAbis.joinToString().ifBlank { "Unavailable" },
+        )
+    }
+}
+
+@Composable
+private fun MemoryCard(snapshot: DeviceSnapshot) {
+    val usedPercent = snapshot.usedMemoryPercent
+    Panel(title = "MEMORY") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Column {
                 Text(
-                    text = "GAME RUNTIME",
+                    text = formatMemoryMb(snapshot.usedMemoryMb),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "System memory in use",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp,
                 )
-                Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(50),
-                ) {
-                    Text(
-                        text = "NOT INTEGRATED",
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
             }
-
             Text(
-                text = "SA-MP PC asli di Android",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 21.sp,
+                text = usedPercent?.let { "$it%" } ?: "N/A",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
             )
-
-            Text(
-                text = "Launcher ini ditujukan untuk menjalankan GTA San Andreas PC dan client SA-MP Windows asli. Runtime Windows x86 belum terintegrasi.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp,
-                lineHeight = 19.sp,
-            )
-
-            Button(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-            ) {
-                Text(
-                    text = "PLAY — RUNTIME BELUM TERSEDIA",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                )
-            }
         }
+
+        LinearProgressIndicator(
+            progress = { (usedPercent ?: 0) / 100f },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+
+        MetricRow("Total RAM", formatMemoryMb(snapshot.totalMemoryMb))
+        MetricRow("Available RAM", formatMemoryMb(snapshot.availableMemoryMb))
+        MetricRow("App memory (PSS)", formatMemoryMb(snapshot.appPssMb))
     }
 }
 
 @Composable
-private fun DeviceCard(
-    report: DeviceReport,
-    onRefresh: () -> Unit,
+private fun SystemHealthCard(snapshot: DeviceSnapshot) {
+    val thermalColor = when (snapshot.thermalState) {
+        ThermalState.NONE, ThermalState.LIGHT -> MaterialTheme.colorScheme.secondary
+        ThermalState.MODERATE -> MaterialTheme.colorScheme.tertiary
+        ThermalState.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.error
+    }
+
+    Panel(title = "SYSTEM HEALTH") {
+        MetricRow(
+            "Battery",
+            snapshot.batteryPercent?.let { "$it%" } ?: "Unavailable",
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Thermal status",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
+            StatusChip(
+                label = snapshot.thermalState.displayName.uppercase(),
+                color = thermalColor,
+            )
+        }
+        MetricRow(
+            "Power saver",
+            snapshot.powerSaveMode?.let { if (it) "On" else "Off" } ?: "Unavailable",
+        )
+        MetricRow(
+            "Low-memory warning",
+            snapshot.lowMemory?.let { if (it) "Active" else "No" } ?: "Unavailable",
+        )
+    }
+}
+
+@Composable
+private fun DiagnosticNote() {
+    Panel(title = "SAMPLING") {
+        Text(
+            text = "Telemetry refreshes every 5 seconds while this screen is visible. Sampling pauses when the app moves to the background.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+        )
+        Text(
+            text = "GPU model, driver version, and system-wide CPU utilization are not guessed when Android does not expose reliable public data.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+        )
+    }
+}
+
+@Composable
+private fun Panel(
+    title: String,
+    content: @Composable () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
-        shape = RoundedCornerShape(24.dp),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "DEVICE PROFILE",
+                text = title,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.2.sp,
+                letterSpacing = 1.4.sp,
             )
-
-            Text(
-                text = report.displayName.ifBlank { "Unknown device" },
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
-
-            MetricRow("SoC", report.socModel.ifBlank { "Unknown" })
-            MetricRow("Hardware", report.hardware.ifBlank { "Unknown" })
-            MetricRow("Memory", formatMemory(report.totalMemoryMb))
-            MetricRow("CPU threads", report.cpuThreadCount.toString())
-            MetricRow("Android", "${report.androidRelease}  (API ${report.apiLevel})")
-            MetricRow(
-                label = "Supported ABIs",
-                value = report.supportedAbis.joinToString().ifBlank { "Unknown" },
-            )
-            MetricRow("GPU / driver", "Probe not implemented")
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            OutlinedButton(
-                onClick = onRefresh,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("REFRESH DEVICE REPORT", fontSize = 11.sp)
-            }
+            content()
         }
+    }
+}
+
+@Composable
+private fun StatusChip(
+    label: String,
+    color: androidx.compose.ui.graphics.Color,
+) {
+    Surface(
+        color = color.copy(alpha = 0.13f),
+        shape = RoundedCornerShape(50),
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            color = color,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
+        )
     }
 }
 
@@ -252,7 +373,7 @@ private fun MetricRow(
             text = value,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 16.dp),
+                .padding(start = 14.dp),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
@@ -261,28 +382,4 @@ private fun MetricRow(
             textAlign = TextAlign.End,
         )
     }
-}
-
-@Composable
-private fun ProjectNote() {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = "COMPATIBILITY FIRST",
-            color = MaterialTheme.colorScheme.secondary,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.2.sp,
-        )
-        Text(
-            text = "Tidak ada klaim FPS atau dukungan perangkat sebelum runtime, renderer, dan client SA-MP PC lulus pengujian nyata.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            lineHeight = 18.sp,
-        )
-    }
-}
-
-private fun formatMemory(memoryMb: Long?): String {
-    if (memoryMb == null) return "Unknown"
-    return String.format(Locale.US, "%.1f GB", memoryMb / 1024.0)
 }
