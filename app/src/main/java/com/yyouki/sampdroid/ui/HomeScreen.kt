@@ -39,6 +39,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yyouki.sampdroid.device.DeviceProbe
+import com.yyouki.sampdroid.runtime.RuntimeIntegrationState
+import com.yyouki.sampdroid.runtime.currentRuntimeStatus
 import com.yyouki.sampdroid.device.formatDiagnosticReport
 import com.yyouki.sampdroid.device.calculateAppCpuCores
 import com.yyouki.sampdroid.device.DeviceReport
@@ -134,6 +136,8 @@ fun HomeScreen(
             )
 
             DeviceCard(report = device)
+
+            RuntimeStatusCard()
 
             MemoryCard(snapshot = snapshot)
 
@@ -266,6 +270,41 @@ private fun DeviceCard(report: DeviceReport) {
         MetricRow(
             "Supported ABIs",
             report.supportedAbis.joinToString().ifBlank { "Unavailable" },
+        )
+    }
+}
+
+@Composable
+private fun RuntimeStatusCard() {
+    val status = currentRuntimeStatus()
+
+    Panel(title = "RUNTIME INTEGRATION") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "External runtime",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
+            StatusChip(
+                label = status.title.uppercase(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = status.description,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+        )
+        Text(
+            text = "This screen reports integration status only; it does not start or load external programs.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+            lineHeight = 16.sp,
         )
     }
 }
