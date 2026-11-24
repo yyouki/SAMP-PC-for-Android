@@ -2,6 +2,8 @@ package com.yyouki.sampdroid.device
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Debug
@@ -49,6 +51,14 @@ object DeviceProbe {
             ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             ?.takeIf { it in 0..100 }
 
+        // ACTION_BATTERY_CHANGED is a sticky system broadcast; this reads it without a receiver loop.
+        val batteryIntent = context.registerReceiver(
+            null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+        )
+        val batteryStatus = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+        val pluggedSource = batteryIntent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+
         val powerManager = context.getSystemService(PowerManager::class.java)
         val thermalState = if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && powerManager != null
@@ -63,6 +73,13 @@ object DeviceProbe {
             availableMemoryMb = availableMemoryMb,
             appPssMb = appPssMb,
             batteryPercent = batteryPercent,
+            batteryState = BatteryState.fromPlatformStatus(batteryStatus),
+            batterySource = when (pluggedSource) {
+                BatteryManager.BATTERY_PLUGGED_AC -> "AC"
+                BatteryManager.BATTERY_PLUGGED_USB -> "USB"
+                BatteryManager.BATTERY_PLUGGED_WIRELESS -> "Wireless"
+                else -> if (batteryStatus == BatteryManager.BATTERY_STATUS_DISCHARGING) "Battery" else "Unknown"
+            },
             thermalState = thermalState,
             powerSaveMode = powerManager?.isPowerSaveMode,
             lowMemory = lowMemory,
