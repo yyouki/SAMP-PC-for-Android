@@ -18,9 +18,12 @@ This is not an Android-native reimplementation of SA-MP, a mobile multiplayer cl
 ## Current implementation
 
 - Android project scaffold using Kotlin and Jetpack Compose.
-- Initial home screen with an explicitly disabled Play action while runtime integration is absent.
-- Basic device report: model, SoC identifier, hardware, RAM, CPU thread count, Android API level, and supported ABIs.
-- Runtime contract separated from the UI; no Wine or CPU translator is wired in yet.
+- Device Performance Dashboard built with Jetpack Compose.
+- Device identity report: manufacturer, model, SoC identifier, hardware, Android version, CPU thread count, and supported ABIs.
+- Foreground-only telemetry sampling for total/available RAM, app PSS, battery capacity, thermal status, power-save state, and low-memory warning.
+- Pure unit tests for memory calculations, thermal-state mapping, and metric formatting.
+- The dashboard explicitly avoids guessing GPU drivers or system-wide CPU utilization.
+- The runtime contract remains separate from the UI; no game runtime is integrated by this dashboard.
 - Gradle Wrapper configuration, pinned build dependencies, build instructions, and an Android CI workflow.
 
 The current app is a **launcher shell**, not a working SA-MP runner. GPU/driver probing is not implemented yet.
