@@ -6,7 +6,7 @@
 |---|---:|
 | Android Gradle Plugin | 9.4.0 |
 | Gradle Wrapper | 9.7.0 |
-| Kotlin Gradle Plugin | 2.4.21 |
+| AGP built-in Kotlin | Kotlin 2.4.21 |
 | Jetpack Compose BOM | 2026.09.00 |
 | AndroidX Activity Compose | 1.13.0 |
 | AndroidX Lifecycle Runtime Compose | 2.11.1 |
@@ -15,7 +15,7 @@
 | Target SDK | 36 |
 | Minimum SDK | 26 |
 
-AGP 9.4 requires Gradle 9.6.0 or newer and JDK 17. This project uses Gradle 9.7.0 and JDK 17. Built-in Kotlin is temporarily disabled because the project explicitly pins Kotlin Gradle Plugin 2.4.21 and the matching Compose compiler plugin.
+AGP 9.4 requires Gradle 9.6.0 or newer and JDK 17. This project uses Gradle 9.7.0 and JDK 17. Kotlin is provided by AGP's built-in Kotlin support, while the Compose compiler plugin is pinned to Kotlin 2.4.21. The legacy org.jetbrains.kotlin.android plugin is intentionally not applied because it is incompatible with AGP 9's new Android DSL.
 
 ## Build a debug APK
 
@@ -45,7 +45,7 @@ app/build/outputs/apk/debug/app-debug.apk
 
 ## Dashboard scope
 
-The app displays device identity, memory telemetry, battery level, Android thermal status, and power-save state. Sampling is paused when the activity is not visible. Android does not expose a universal, reliable per-device GPU/driver string or system-wide CPU utilization through a single public API; those fields are not guessed.
+The app displays device identity, total/available memory, app PSS, battery capacity/state/source, Android thermal status, power-save state, and low-memory warnings. It estimates CPU core-equivalents for this app process from Process CPU time; this is not system-wide CPU utilization. Sampling pauses when the activity is not visible. Android does not expose a universal, reliable per-device GPU/driver string through a single public API; that field is not guessed.
 
 ## Reproducibility
 
