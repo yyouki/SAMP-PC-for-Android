@@ -23,6 +23,23 @@ class DeviceSnapshotTest {
     }
 
     @Test
+    fun calculatesAppCpuAsCoreEquivalents() {
+        val previous = CpuTimeSample(processCpuTimeMs = 1_000, elapsedRealtimeMs = 5_000)
+        val current = CpuTimeSample(processCpuTimeMs = 1_500, elapsedRealtimeMs = 6_000)
+
+        assertEquals(0.5, calculateAppCpuCores(previous, current)!!, 0.0001)
+    }
+
+    @Test
+    fun returnsNullForMissingOrInvalidCpuIntervals() {
+        val current = CpuTimeSample(processCpuTimeMs = 1_500, elapsedRealtimeMs = 6_000)
+        val backwards = CpuTimeSample(processCpuTimeMs = 900, elapsedRealtimeMs = 6_000)
+
+        assertNull(calculateAppCpuCores(null, current))
+        assertNull(calculateAppCpuCores(current, backwards))
+    }
+
+    @Test
     fun mapsAndroidThermalStatuses() {
         assertEquals(ThermalState.NONE, ThermalState.fromPlatformStatus(0))
         assertEquals(ThermalState.LIGHT, ThermalState.fromPlatformStatus(1))
