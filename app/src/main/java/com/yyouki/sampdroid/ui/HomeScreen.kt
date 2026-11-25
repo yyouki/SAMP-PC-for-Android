@@ -1,8 +1,10 @@
 package com.yyouki.sampdroid.ui
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +23,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,25 +37,59 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.yyouki.sampdroid.device.DeviceProbe
 import com.yyouki.sampdroid.device.AppStorageProbe
 import com.yyouki.sampdroid.device.StorageSnapshot
 import com.yyouki.sampdroid.device.formatStorageBytes
 import com.yyouki.sampdroid.runtime.currentRuntimeStatus
 import com.yyouki.sampdroid.device.formatDiagnosticReport
-import com.yyouki.sampdroid.device.calculateAppCpuCores
+import com.yyouki.sampdroid.device.AppCpuTracker
+import com.yyouki.sampdroid.device.CpuTimeSample
 import com.yyouki.sampdroid.device.DeviceReport
 import com.yyouki.sampdroid.device.DeviceSnapshot
 import com.yyouki.sampdroid.device.ThermalState
 import com.yyouki.sampdroid.device.formatMemoryMb
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.DateFormat
 import java.util.Date
 
 private const val SAMPLE_INTERVAL_MS = 5_000L
+
+private class StaticDeviceData(
+    val device: DeviceReport,
+    val storage: StorageSnapshot?,
+)
+
+private class TelemetryResult(
+    val snapshot: DeviceSnapshot,
+    val cpuSample: CpuTimeSample,
+    val staticData: StaticDeviceData?,
+)
+
+private fun readTelemetry(context: Context, includeStatic: Boolean): TelemetryResult {
+    val cpuSample = DeviceProbe.readCpuTimeSample()
+    val snapshot = DeviceProbe.readSnapshot(context)
+    val staticData = if (includeStatic) {
+        StaticDeviceData(
+            device = DeviceProbe.readDeviceReport(context),
+            storage = AppStorageProbe.readSnapshot(context),
+        )
+    } else {
+        null
+    }
+
+    return TelemetryResult(
+        snapshot = snapshot,
+        cpuSample = cpuSample,
+        staticData = staticData,
+    )
+}
 
 @Composable
 fun HomeScreen(
@@ -64,61 +99,58 @@ fun HomeScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var device by remember(context) {
-        mutableStateOf(DeviceProbe.readDeviceReport(context))
-    }
-    var snapshot by remember(context) {
-        mutableStateOf(DeviceProbe.readSnapshot(context))
-    }
-    var appStorage by remember(context) {
-        mutableStateOf(AppStorageProbe.readSnapshot(context))
-    }
+    var deviceState by remember(context) { mutableStateOf<DeviceReport?>(null) }
+    var snapshotState by remember(context) { mutableStateOf<DeviceSnapshot?>(null) }
+    var appStorage by remember(context) { mutableStateOf<StorageSnapshot?>(null) }
     var appCpuCores by remember(context) { mutableStateOf<Double?>(null) }
-    var previousCpuSample by remember(context) {
-        mutableStateOf(DeviceProbe.readCpuTimeSample())
-    }
+    val cpuTracker = remember(context) { AppCpuTracker() }
+    val refreshRequests = remember(context) { Channel<Unit>(Channel.CONFLATED) }
     var isForeground by remember(lifecycleOwner) {
         mutableStateOf(
             lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED),
         )
     }
 
-    // Observe the screen lifecycle so periodic sampling stops in the background.
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> isForeground = true
-                Lifecycle.Event.ON_STOP -> isForeground = false
-                else -> Unit
-            }
-        }
+    // Keep telemetry sampling lightweight and foreground-only.
+    LaunchedEffect(lifecycleOwner, context) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            isForeground = true
+            cpuTracker.reset()
+            appCpuCores = null
 
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+            try {
+                var includeStatic = deviceState == null
+                while (isActive) {
+                    val result = withContext(Dispatchers.IO) {
+                        readTelemetry(context, includeStatic)
+                    }
+
+                    snapshotState = result.snapshot
+                    appCpuCores = cpuTracker.record(result.cpuSample)
+                    result.staticData?.let { staticData ->
+                        deviceState = staticData.device
+                        appStorage = staticData.storage
+                    }
+
+                    includeStatic = withTimeoutOrNull(SAMPLE_INTERVAL_MS) {
+                        refreshRequests.receive()
+                    } != null
+                }
+            } finally {
+                isForeground = false
+            }
         }
     }
 
-    // Keep telemetry sampling lightweight and foreground-only.
-    LaunchedEffect(isForeground) {
-        if (!isForeground) return@LaunchedEffect
-
-        // Start a fresh interval after resume; never include time spent in the background.
-        previousCpuSample = DeviceProbe.readCpuTimeSample()
-        appCpuCores = null
-
-        while (isForeground && isActive) {
-            // Wait before sampling so the CPU metric represents a complete interval.
-            delay(SAMPLE_INTERVAL_MS)
-            if (!isForeground || !isActive) break
-
-            // Device identity rarely changes; only dynamic telemetry is sampled periodically.
-            snapshot = DeviceProbe.readSnapshot(context)
-
-            val currentCpuSample = DeviceProbe.readCpuTimeSample()
-            appCpuCores = calculateAppCpuCores(previousCpuSample, currentCpuSample)
-            previousCpuSample = currentCpuSample
-        }
+    val device = deviceState
+    val snapshot = snapshotState
+    if (device == null || snapshot == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+        )
+        return
     }
 
     Column(
@@ -156,13 +188,7 @@ fun HomeScreen(
             DiagnosticNote()
 
             OutlinedButton(
-                onClick = {
-                    device = DeviceProbe.readDeviceReport(context)
-                    snapshot = DeviceProbe.readSnapshot(context)
-                    appStorage = AppStorageProbe.readSnapshot(context)
-                    previousCpuSample = DeviceProbe.readCpuTimeSample()
-                    appCpuCores = null
-                },
+                onClick = { refreshRequests.trySend(Unit) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
