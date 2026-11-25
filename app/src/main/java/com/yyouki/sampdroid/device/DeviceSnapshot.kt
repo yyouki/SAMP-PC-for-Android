@@ -109,5 +109,6 @@ fun calculateUsagePercent(totalMb: Long?, availableMb: Long?): Int? {
 /** Keep dashboard formatting deterministic across device locales. */
 fun formatMemoryMb(memoryMb: Long?): String {
     if (memoryMb == null || memoryMb < 0L) return "Unavailable"
+    if (memoryMb < 1024L) return "$memoryMb MB"
     return String.format(java.util.Locale.US, "%.1f GB", memoryMb / 1024.0)
 }

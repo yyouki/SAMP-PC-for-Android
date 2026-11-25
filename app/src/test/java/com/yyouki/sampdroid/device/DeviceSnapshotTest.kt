@@ -61,8 +61,24 @@ class DeviceSnapshotTest {
     }
 
     @Test
-    fun formatsMemoryUsingStableUnitAndLocale() {
+    fun formatsMemoryBelowOneGigabyteInMegabytes() {
+        assertEquals("0 MB", formatMemoryMb(0))
+        assertEquals("256 MB", formatMemoryMb(256))
+        assertEquals("512 MB", formatMemoryMb(512))
+        assertEquals("768 MB", formatMemoryMb(768))
+        assertEquals("1023 MB", formatMemoryMb(1_023))
+    }
+
+    @Test
+    fun formatsMemoryFromOneGigabyteWithOneDecimal() {
         assertEquals("1.0 GB", formatMemoryMb(1_024))
+        assertEquals("1.5 GB", formatMemoryMb(1_536))
+        assertEquals("2.0 GB", formatMemoryMb(2_048))
+        assertEquals("8.0 GB", formatMemoryMb(8_192))
+    }
+
+    @Test
+    fun formatsUnavailableMemoryAsUnavailable() {
         assertEquals("Unavailable", formatMemoryMb(null))
         assertEquals("Unavailable", formatMemoryMb(-1))
     }

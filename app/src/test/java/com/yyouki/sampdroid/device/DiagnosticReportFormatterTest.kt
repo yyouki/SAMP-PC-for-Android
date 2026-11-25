@@ -44,8 +44,11 @@ class DiagnosticReportFormatterTest {
 
         assertTrue(report.contains("Name: Example Model X"))
         assertTrue(report.contains("SoC: SoC Y"))
+        assertTrue(report.contains("Total RAM: 8.0 GB"))
+        assertTrue(report.contains("Available RAM: 2.0 GB"))
+        assertTrue(report.contains("Used RAM: 6.0 GB"))
         assertTrue(report.contains("Used RAM: 75%"))
-        assertTrue(report.contains("App PSS: 0.3 GB"))
+        assertTrue(report.contains("App PSS: 256 MB"))
         assertTrue(report.contains("App CPU: 0.50 cores"))
         assertTrue(report.contains("Battery: 75%"))
         assertTrue(report.contains("Thermal status: Moderate"))
