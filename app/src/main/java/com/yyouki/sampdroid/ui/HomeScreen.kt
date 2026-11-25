@@ -174,7 +174,7 @@ fun HomeScreen(
 
             DeviceCard(report = device)
 
-            RuntimeStatusCard()
+            RuntimeStatusCard(report = device)
 
             MemoryCard(snapshot = snapshot)
 
@@ -297,22 +297,14 @@ private fun DeviceCard(report: DeviceReport) {
         MetricRow("SoC", report.socModel.ifBlank { "Unavailable" })
         MetricRow("Hardware", report.hardware.ifBlank { "Unavailable" })
         MetricRow("CPU threads", report.cpuThreadCount.toString())
-        MetricRow(
-            "Android",
-            "${report.androidRelease} · API ${report.apiLevel}",
-        )
-        MetricRow(
-            "Supported ABIs",
-            report.supportedAbis.joinToString().ifBlank { "Unavailable" },
-        )
     }
 }
 
 @Composable
-private fun RuntimeStatusCard() {
+private fun RuntimeStatusCard(report: DeviceReport) {
     val status = currentRuntimeStatus()
 
-    Panel(title = "RUNTIME INTEGRATION") {
+    Panel(title = "RUNTIME ENVIRONMENT") {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -334,8 +326,14 @@ private fun RuntimeStatusCard() {
             fontSize = 12.sp,
             lineHeight = 18.sp,
         )
+        MetricRow("App process bitness", report.processBitness.displayName)
+        MetricRow("Android platform", "${report.androidRelease.ifBlank { "Unavailable" }} · API ${report.apiLevel}")
+        MetricRow(
+            "Device-supported ABIs",
+            report.supportedAbis.joinToString().ifBlank { "Unavailable" },
+        )
         Text(
-            text = "This screen reports integration status only; it does not start or load external programs.",
+            text = "These values describe the Android app and device only. They do not establish Windows executable or SA-MP compatibility.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             lineHeight = 16.sp,

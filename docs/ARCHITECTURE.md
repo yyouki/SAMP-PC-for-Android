@@ -17,7 +17,7 @@ No external execution runtime is packaged or integrated in the current applicati
 
 ### Device diagnostics
 
-- Reads public Android device information and supported ABI values.
+- Reads public Android device information, app-process bitness, and device-supported ABI values.
 - Samples RAM, app PSS, battery state, thermal status, power-saving state, and low-memory warning.
 - Samples this app process's CPU time and displays a core-equivalent estimate.
 - Pauses periodic sampling when the Activity is in the background.
@@ -25,7 +25,7 @@ No external execution runtime is packaged or integrated in the current applicati
 
 ### Runtime status
 
-The `runtime` package currently exposes a read-only status model. It reports whether an external runtime is integrated into this build. It does not install, load, execute, or control external programs.
+The `runtime` package currently exposes a read-only status model. The dashboard also reports Android app-process bitness, Android API level, and device-supported ABIs as environment facts. These facts do not establish compatibility with Windows executables or any specific game. The app does not install, load, execute, or control external programs.
 
 The UI must not contain shell-command construction or external process controls.
 

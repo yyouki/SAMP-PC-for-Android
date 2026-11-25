@@ -10,6 +10,7 @@ This roadmap covers the currently supported Android diagnostics application. Ite
 - [x] Foreground-only sampling lifecycle.
 - [x] Per-process CPU time estimate with clear labeling.
 - [x] Runtime integration status displayed as not integrated.
+- [x] Android app-process bitness shown separately from device-supported ABIs.
 - [x] Light/dark themes with local persistence.
 - [x] User-initiated diagnostic report sharing.
 

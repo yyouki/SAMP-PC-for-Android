@@ -40,6 +40,7 @@ object DeviceProbe {
             cpuThreadCount = Runtime.getRuntime().availableProcessors(),
             totalMemoryMb = readMemoryInfo(context).first,
             supportedAbis = Build.SUPPORTED_ABIS.toList(),
+            processBitness = ProcessBitness.fromIs64Bit(Process.is64Bit()),
         )
     }
 

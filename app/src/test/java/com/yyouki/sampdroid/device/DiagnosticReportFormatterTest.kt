@@ -17,6 +17,7 @@ class DiagnosticReportFormatterTest {
             cpuThreadCount = 8,
             totalMemoryMb = 8_192,
             supportedAbis = listOf("arm64-v8a"),
+            processBitness = ProcessBitness.BIT_64,
         )
         val snapshot = DeviceSnapshot(
             totalMemoryMb = 8_192,
@@ -44,6 +45,7 @@ class DiagnosticReportFormatterTest {
 
         assertTrue(report.contains("Name: Example Model X"))
         assertTrue(report.contains("SoC: SoC Y"))
+        assertTrue(report.contains("App process bitness: 64-bit"))
         assertTrue(report.contains("Total RAM: 8.0 GB"))
         assertTrue(report.contains("Available RAM: 2.0 GB"))
         assertTrue(report.contains("Used RAM: 6.0 GB"))
@@ -89,6 +91,7 @@ class DiagnosticReportFormatterTest {
 
         assertTrue(report.contains("Name: Unavailable"))
         assertTrue(report.contains("Total RAM: Unavailable"))
+        assertTrue(report.contains("App process bitness: Unavailable"))
         assertTrue(report.contains("Battery: Unavailable"))
         assertTrue(report.contains("App CPU: Unavailable"))
         assertTrue(report.contains("Filesystem total: Unavailable"))

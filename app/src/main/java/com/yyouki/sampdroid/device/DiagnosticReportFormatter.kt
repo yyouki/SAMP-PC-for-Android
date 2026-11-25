@@ -31,6 +31,7 @@ fun formatDiagnosticReport(
         appendLine("Android: ${device.androidRelease.ifBlank { "Unavailable" }} (API ${device.apiLevel})")
         appendLine("CPU threads: ${device.cpuThreadCount}")
         appendLine("Supported ABIs: ${device.supportedAbis.joinToString().ifBlank { "Unavailable" }}")
+        appendLine("App process bitness: ${device.processBitness.displayName}")
         appendLine()
         appendLine("[MEMORY]")
         appendLine("Total RAM: ${formatMemoryMb(snapshot.totalMemoryMb)}")
@@ -55,6 +56,7 @@ fun formatDiagnosticReport(
         appendLine("Power saver: ${snapshot.powerSaveMode?.let { if (it) "On" else "Off" } ?: "Unavailable"}")
         appendLine("Low-memory warning: ${snapshot.lowMemory?.let { if (it) "Active" else "No" } ?: "Unavailable"}")
         appendLine()
-        append("Note: App CPU is a process-level core-equivalent estimate, not system-wide CPU utilization.")
+        appendLine("Note: App CPU is a process-level core-equivalent estimate, not system-wide CPU utilization.")
+        append("Note: App process bitness and supported ABIs describe the Android environment only; they do not establish compatibility with external Windows applications.")
     }
 }
